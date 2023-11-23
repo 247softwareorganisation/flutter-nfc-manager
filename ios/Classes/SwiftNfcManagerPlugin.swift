@@ -741,23 +741,21 @@ public class SwiftNfcManagerPlugin: NSObject, FlutterPlugin {
 
 @available(iOS 13.0, *)
 extension SwiftNfcManagerPlugin: NFCTagReaderSessionDelegate {
-  public func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
-    // no op
-  }
-
-  public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
-      let handle = NSUUID().uuidString
-      let data = [kId: "Cancel", kContent: "", kError: error.localizedDescription, kStatus: "error"]
-      //channel.invokeMethod("onError", arguments: data);
-      self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
-      if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
-      session.invalidate()
-  }
-
-  public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
-    let handle = NSUUID().uuidString
-
-    session.connect(to: tags.first!) { error in
+    public func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
+        // no op
+    }
+    
+    public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
+        let handle = NSUUID().uuidString
+        let data = [kId: "Cancel", kContent: "", kError: error.localizedDescription, kStatus: "error"]
+        //channel.invokeMethod("onError", arguments: data);
+        self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
+        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+        session.invalidate()
+    }
+    
+    public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
+        let handle = NSUUID().uuidString
         
         //var uid = ""
         if case let NFCTag.miFare(miFare) = tags.first! {
@@ -766,30 +764,29 @@ extension SwiftNfcManagerPlugin: NFCTagReaderSessionDelegate {
                 let tagUID = miFare.identifier.map{String(format: "%.2hhx", $0)}.joined()
                 let data = [self.kId: tagUID, self.kContent: "", self.kError: "", self.kStatus: "reading"]
                 self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
-                        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+                if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
             }
         }
-//      if let error = error {
-//        // skip tag detection
-//        print(error)
-//        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
-//        return
-//      }
-//
-//      getNFCTagMapAsync(tags.first!) { tag, data, error in
-//        if let error = error {
-//          // skip tag detection
-//          print(error)
-//          if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
-//          return
-//        }
-//
-//        self.tags[handle] = tag
-//        self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
-//        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
-//      }
-    }
-  }
+        //      if let error = error {
+        //        // skip tag detection
+        //        print(error)
+        //        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+        //        return
+        //      }
+        //
+        //      getNFCTagMapAsync(tags.first!) { tag, data, error in
+        //        if let error = error {
+        //          // skip tag detection
+        //          print(error)
+        //          if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+        //          return
+        //        }
+        //
+        //        self.tags[handle] = tag
+        //        self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
+        //        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+        //      }
+}
 }
 
 
