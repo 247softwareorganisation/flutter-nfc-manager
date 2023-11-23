@@ -4,6 +4,11 @@ import Flutter
 public class SwiftNfcManagerPlugin: NSObject, FlutterPlugin {
   private let channel: FlutterMethodChannel
 
+    fileprivate let kId = "nfcId"
+    fileprivate let kContent = "nfcContent"
+    fileprivate let kStatus = "nfcStatus"
+    fileprivate let kError = "nfcError"
+    
   private var _session: Any?
   @available(iOS 13.0, *)
   private var session: NFCTagReaderSession? {
@@ -741,32 +746,90 @@ extension SwiftNfcManagerPlugin: NFCTagReaderSessionDelegate {
   }
 
   public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
-    channel.invokeMethod("onError", arguments: getErrorMap(error))
+      let data = [kId: "Cancel", kContent: "", kError: error.localizedDescription, kStatus: "error"]
+      channel.invokeMethod("onError", arguments: data);
+      session.invalidate()
   }
 
   public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
     let handle = NSUUID().uuidString
 
     session.connect(to: tags.first!) { error in
-      if let error = error {
-        // skip tag detection
-        print(error)
-        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
-        return
-      }
-
-      getNFCTagMapAsync(tags.first!) { tag, data, error in
-        if let error = error {
-          // skip tag detection
-          print(error)
-          if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
-          return
+        
+        //var uid = ""
+        if case let NFCTag.miFare(miFare) = tags.first! {
+            session.connect(to: tags.first!) { (error: Error?) in
+                
+                let tagUID = miFare.identifier.map{String(format: "%.2hhx", $0)}.joined()
+                let data = [self.kId: tagUID, self.kContent: "", self.kError: "", self.kStatus: "reading"]
+                self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
+                        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+                session.invalidate()
+            }
         }
-
-        self.tags[handle] = tag
-        self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
-        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
-      }
+//      if let error = error {
+//        // skip tag detection
+//        print(error)
+//        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+//        return
+//      }
+//
+//      getNFCTagMapAsync(tags.first!) { tag, data, error in
+//        if let error = error {
+//          // skip tag detection
+//          print(error)
+//          if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+//          return
+//        }
+//
+//        self.tags[handle] = tag
+//        self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
+//        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+//      }
     }
   }
 }
+
+
+
+//// MARK: - NFCDelegate
+//@available(iOS 13.0, *)
+//extension SwiftFlutterNfcReaderPlugin: NFCTagReaderSessionDelegate{
+//    public func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
+//        
+//    }
+//    public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
+//        print(error.localizedDescription)
+//        let data = [kId: "Cancel", kContent: "", kError: error.localizedDescription, kStatus: "error"]
+//        self.sendNfcEvent(data: data);
+//        self.readResult?(data)
+//        self.readResult=nil
+//        session.invalidate()
+//    }
+//    
+//    public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
+//        //var uid = ""
+//        if case let NFCTag.miFare(miFare) = tags.first! {
+//            session.connect(to: tags.first!) { (error: Error?) in
+//                
+//                let tagUID = miFare.identifier.map{String(format: "%.2hhx", $0)}.joined()
+//                
+////                    var byteData = [UInt8]()
+////                    miFare.identifier.withUnsafeBytes { byteData.append(contentsOf: $0) }
+////                    byteData.forEach {
+////                        uid.append(String($0, radix: 16))
+////                    }
+//                let data = [self.kId: tagUID, self.kContent: "", self.kError: "", self.kStatus: "reading"]
+//                self.sendNfcEvent(data: data);
+//                self.readResult?(data)
+//                self.readResult=nil
+//                session.invalidate()
+//            }
+//        }
+//        //disableNFC()
+//    }
+//    
+    
+    
+    
+//}
