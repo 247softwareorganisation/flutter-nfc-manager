@@ -767,7 +767,6 @@ extension SwiftNfcManagerPlugin: NFCTagReaderSessionDelegate {
                 let data = [self.kId: tagUID, self.kContent: "", self.kError: "", self.kStatus: "reading"]
                 self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
                         if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
-                session.invalidate()
             }
         }
 //      if let error = error {
