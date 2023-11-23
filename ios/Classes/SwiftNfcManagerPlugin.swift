@@ -746,6 +746,7 @@ extension SwiftNfcManagerPlugin: NFCTagReaderSessionDelegate {
   }
 
   public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
+      let handle = NSUUID().uuidString
       let data = [kId: "Cancel", kContent: "", kError: error.localizedDescription, kStatus: "error"]
       //channel.invokeMethod("onError", arguments: data);
       self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
