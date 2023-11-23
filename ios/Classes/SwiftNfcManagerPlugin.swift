@@ -8,6 +8,7 @@ public class SwiftNfcManagerPlugin: NSObject, FlutterPlugin {
     fileprivate let kContent = "nfcContent"
     fileprivate let kStatus = "nfcStatus"
     fileprivate let kError = "nfcError"
+    var scanTag = false
     
   private var _session: Any?
   @available(iOS 13.0, *)
@@ -746,16 +747,16 @@ extension SwiftNfcManagerPlugin: NFCTagReaderSessionDelegate {
     }
     
     public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
-        if(error.localizedDescription == "success")
-        {
+        if(self.scanTag == true){
+            self.scanTag = false
             session.invalidate()
-            return
+            return;
         }
         let handle = NSUUID().uuidString
         let data = [kId: "Cancel", kContent: "", kError: error.localizedDescription, kStatus: "error"]
         //channel.invokeMethod("onError", arguments: data);
         self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
-        if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+        //if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
         session.invalidate()
     }
     
@@ -765,12 +766,12 @@ extension SwiftNfcManagerPlugin: NFCTagReaderSessionDelegate {
         //var uid = ""
         if case let NFCTag.miFare(miFare) = tags.first! {
             session.connect(to: tags.first!) { (error: Error?) in
-                
+                self.scanTag = true
                 let tagUID = miFare.identifier.map{String(format: "%.2hhx", $0)}.joined()
                 let data = [self.kId: tagUID, self.kContent: "", self.kError: "", self.kStatus: "reading"]
                 self.channel.invokeMethod("onDiscovered", arguments: data.merging(["handle": handle]) { cur, _ in cur })
-                if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
-                session.invalidate(errorMessage: "success")
+               // if !self.shouldInvalidateSessionAfterFirstRead { session.restartPolling() }
+                session.invalidate()
             }
         }
         //      if let error = error {
