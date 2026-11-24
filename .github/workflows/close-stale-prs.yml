@@ -1,10 +1,8 @@
 # Caller for PLAT-895 stale-PR automation — flutter-nfc-manager.
-# Weekly schedule (Monday 10:00 IST) + on-demand manual run with an optional dry-run.
+# Manual run only (workflow_dispatch), with an optional dry-run. No weekly schedule: PLAT-895 keeps the cron on the top-11 repos only.
 name: Close stale PRs
 
 on:
-  schedule:
-    - cron: '30 4 * * 1'   # weekly, Monday 10:00 IST (= 04:30 UTC)
   workflow_dispatch:
     inputs:
       debug-only:
