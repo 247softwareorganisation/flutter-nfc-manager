@@ -1,0 +1,26 @@
+# Caller for PLAT-895 stale-PR automation — flutter-nfc-manager.
+# Manual run only (workflow_dispatch), with an optional dry-run. No weekly schedule: PLAT-895 keeps the cron on the top-11 repos only.
+name: Close stale PRs
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug-only:
+        description: Dry run (log only — no comments or closes)
+        type: boolean
+        default: true
+
+concurrency:
+  group: close-stale-prs
+  cancel-in-progress: false
+
+jobs:
+  close-stale-prs:
+    uses: 247softwareorganisation/github-workflows/.github/workflows/close-stale-prs.yml@master
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+      actions: write
+    with:
+      debug-only: ${{ github.event_name == 'workflow_dispatch' && inputs.debug-only || false }}
